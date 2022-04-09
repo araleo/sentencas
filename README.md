@@ -1,0 +1,1 @@
+**  Todos os scripts foram escritos com Python 3.8. Isso pode ser relevante especialmente para as definições de tipos nas declarações de funções.
