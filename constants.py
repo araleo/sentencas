@@ -34,7 +34,10 @@ RAW_CSV_NAMES = [
 # Dirs
 DATA_DIR = os.path.join(".", "data")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-COURTS_DIR = os.path.join(DATA_DIR, "courts")
+CSV_DATA_PATH = os.path.join(DATA_DIR, "data.csv")
+TXT_DIR = os.path.join(DATA_DIR, "txt")
+HTML_DIR = os.path.join(DATA_DIR, "html")
+LOGS_DIR = os.path.join(DATA_DIR, "logs")
 
 
 if __name__ == "__main__":

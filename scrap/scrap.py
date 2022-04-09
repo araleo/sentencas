@@ -12,17 +12,23 @@ to filter a specific time frame and scrap your
 data within that time frame.
 """
 
+from distutils.log import Log
 from typing import List
 from typing import Tuple
 from typing import Union
 import time
 
 import bs4
+import os
 import requests
 
 from constants import COURTS
+from constants import CSV_DATA_PATH
 from constants import RAW_DIR
+from constants import TXT_DIR
 from csv_utils import save_list_as_csv
+from my_logs import LogServices
+from my_logs import log_err
 
 
 RETRY_WAIT_SECS = 30
@@ -123,9 +129,11 @@ def get_page(url: str) -> Union[requests.Response, None]:
             return res
 
         tries += 1
-        print(f"ERR: response not ok. On try #{tries} got {res.status_code} when getting {url}")
+        print(f"Response not ok. On try #{tries} got {res.status_code} when getting {url}")
         if tries != MAX_RETRIES:
             print(f"Trying again in {tries * RETRY_WAIT_SECS} seconds.")
+        else:
+            log_err(LogServices.SCRAP, f"ERR: {url}. Could not get {url}. Got status {res.status_code} and content {res.text}")
 
     return None
 
@@ -182,6 +190,55 @@ def get_download_url(file_id: str, file_hash: str) -> str:
         f"hashArquivo={file_hash}"
     )
     return BASE_URL + endpoint + "&".join(query)
+
+
+def download_all_verdicts():
+    """
+    Downloads the text content from all the verdicts
+    which info was scrapped and stored in a csv file.
+    """
+    with open(CSV_DATA_PATH) as f:
+        lines = f.readlines()
+
+    for line in lines:
+        line_data = line.split(";")
+        url = line_data[-1]
+        full_id = line_data[5]
+        download_verdit(full_id, url)
+
+
+def download_verdit(full_id: str, url: str):
+    """
+    Requests the url for the verdict text content and saves
+    it in a .txt file.
+    If the text is empty or the verdict is stored in a .pdf
+    file it is skipped. Request errors are also skipped
+    and printed.
+    """
+    filepath = os.path.join(TXT_DIR, f"{full_id}.txt")
+
+    if filepath in os.listdir(TXT_DIR):
+        message = f"ERR: {full_id}. A file with that id already exists. Skipping for now"
+        log_err(LogServices.SCRAP, message)
+        return
+
+    print(f"Downloading {full_id} from {url}")
+    res = requests.get(url)
+
+    if not res.ok:
+        log_err(LogServices.SCRAP, f"ERR: {full_id}. Could not get {url}. Skipping for now.")
+        return
+
+    if res.text == "":
+        log_err(LogServices.SCRAP, f"ERR: {full_id}. {url} appears to be empty. Skipping for now.")
+        return
+
+    if res.text.startswith("%PDF"):
+        log_err(LogServices.SCRAP, f"ERR: {full_id}. {url} appears to be of a PDF file. Skipping for now.")
+        return
+
+    with open(filepath, "w") as f:
+        f.write(res.text)
 
 
 if __name__ == "__main__":

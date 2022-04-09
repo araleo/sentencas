@@ -8,10 +8,10 @@ python main.py <command>
 Available commands:
 
 - scrap
+- merge
 """
 
 import argparse
-import os
 import sys
 
 from constants import COURTS
@@ -19,7 +19,7 @@ from csv_utils import merge_csvs
 from scrap import scrap
 
 
-COMMANDS = ["scrap", "merge"]
+COMMANDS = ["scrap", "merge", "download"]
 
 
 def main():
@@ -41,6 +41,9 @@ def main():
 
     if args.command == "merge":
         merge_csvs()
+
+    if args.command == "download":
+        scrap.download_all_verdicts()
 
 
 def validate_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
