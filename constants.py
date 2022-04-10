@@ -19,6 +19,12 @@ COURTS = {
 }
 
 # Csv
+OUT_CSV_NAMES = [
+    "full_id",
+    "type",
+    "confidence"
+]
+
 RAW_CSV_NAMES = [
     "court",
     "old_num",
@@ -31,13 +37,24 @@ RAW_CSV_NAMES = [
     "url"
 ]
 
+TRAIN_CSV_NAMES = [
+    "full_id",
+    "type",
+]
+
 # Dirs
 DATA_DIR = os.path.join(".", "data")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-CSV_DATA_PATH = os.path.join(DATA_DIR, "data.csv")
 TXT_DIR = os.path.join(DATA_DIR, "txt")
 HTML_DIR = os.path.join(DATA_DIR, "html")
 LOGS_DIR = os.path.join(DATA_DIR, "logs")
+HUMAN_DIR = os.path.join(DATA_DIR, "human")
+TRAIN_DIR = os.path.join(DATA_DIR, "train")
+OUT_DIR = os.path.join(DATA_DIR, "out")
+
+# Files
+CSV_DATA_PATH = os.path.join(DATA_DIR, "data.csv")
+TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "train.csv")
 
 
 if __name__ == "__main__":

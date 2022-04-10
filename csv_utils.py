@@ -6,26 +6,32 @@ from datetime import datetime
 from typing import List
 import os
 
+import pandas as pd
+
+from constants import CSV_DATA_PATH
 from constants import DATA_DIR
+from constants import RAW_CSV_NAMES
 from constants import RAW_DIR
+from constants import TXT_DIR
 
 
-def save_list_as_csv(folder: str, name_prefix: str, data: List[str]):
+def save_list_as_csv(folder: str, name_prefix: str, data: List[str]) -> str:
     """
     Saves a list of strings as a .csv file with a unique filename.
     Each element of the list will be written as a line in the file.
+    Returns the saved file path.
     """
     now = str(datetime.utcnow().timestamp()).replace(".", "")
     filepath = os.path.join(folder, f"{name_prefix}_{now}.csv")
     with open(filepath, "w") as f:
         f.write("\n".join(data))
+    return filepath
 
 
 def merge_csvs(folder: str = RAW_DIR, prefix: str = "raw"):
     """
     Merges the raw csv files scrapped from the search page
     into one output file.
-
     We are storing temporarily all the csvs data in memory to
     avoid performing tens of thousands of file operations.
     """
@@ -62,3 +68,18 @@ def remove_repeated_lines(data: List[str]) -> List[str]:
     return filtered_data
 
 
+def get_dataframe() -> pd.DataFrame:
+    """
+    Reads the .csv file containing the scrapped verdicts information
+    and loads it into a pandas dataframe. Filters the dataframe,
+    removing any verdicts which text wasn't sucessfully downloaded.
+    Returns the filtered dataframe.
+    """
+    donwloaded_files = [f.replace(".txt", "") for f in os.listdir(TXT_DIR)]
+    df = pd.read_csv(CSV_DATA_PATH, sep=";", names=RAW_CSV_NAMES)
+    df = df[df["full_id"].isin(donwloaded_files)]
+    return df
+
+
+def merge_training_csvs() -> pd.DataFrame:
+    pass
