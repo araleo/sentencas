@@ -55,6 +55,7 @@ OUT_DIR = os.path.join(DATA_DIR, "out")
 # Files
 CSV_DATA_PATH = os.path.join(DATA_DIR, "data.csv")
 TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "train.csv")
+FULL_TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "full.csv")
 
 
 if __name__ == "__main__":

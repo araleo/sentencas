@@ -10,6 +10,7 @@ import pandas as pd
 
 from constants import CSV_DATA_PATH
 from constants import DATA_DIR
+from constants import FULL_TRAIN_DATA_PATH
 from constants import RAW_CSV_NAMES
 from constants import RAW_DIR
 from constants import TXT_DIR
@@ -81,5 +82,22 @@ def get_dataframe() -> pd.DataFrame:
     return df
 
 
-def merge_training_csvs() -> pd.DataFrame:
-    pass
+def append_to_full_training_csv(data: List[str]):
+    """
+    Appends verified data to the full training .csv file,
+    checking if entry isn't already there.
+    """
+    new_entries = []
+
+    with open(FULL_TRAIN_DATA_PATH) as f:
+        ids = [line.strip().split(";")[0] for line in f.readlines()]
+
+    for line in data:
+        _id = line.strip().split(";")[0]
+        if _id not in ids:
+            new_entries.append(line)
+
+    if new_entries:
+        with open(FULL_TRAIN_DATA_PATH, "a") as f:
+            f.write("\n")
+            f.write("\n".join(new_entries))

@@ -15,6 +15,7 @@ Available commands:
 - verify
 """
 
+from datetime import datetime
 import argparse
 import sys
 
@@ -40,8 +41,10 @@ def register_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--court", type=str, help=f"Available courts: {list(COURTS.keys())}")
     parser.add_argument("--page", type=int, default=0, help=f"Starting page for the search, defaults to 0")
     parser.add_argument("--dir", type=str, default="", help=f"Target directory, relative to the cwd")
-    parser.add_argument("--sample", type=int, default=0, help=f"Sample size, defaults to 50")
-    parser.add_argument("--state", type=int, default=1, help=f"Random state, defaults to 1")
+    parser.add_argument("--sample", type=int, default=50, help=f"Sample size")
+    parser.add_argument("--state", type=int, default=int(datetime.utcnow().timestamp()), help=f"Random state")
+    parser.add_argument("--train", type=str, default="", help=f"Name of the training data file")
+    parser.add_argument("--trainsize", type=float, default=0.75, help=f"Size of the training set. Must be between 0 and 1")
     return parser
 
 
@@ -61,6 +64,10 @@ def validate_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
         print("Page must be greater than 0")
         sys.exit(3)
 
+    if args.trainsize < 0 or args.trainsize > 1:
+        print("Train size must be between 0 and 1")
+        sys.exit(3)
+
     return args
 
 
@@ -78,14 +85,13 @@ def switch_args(args: argparse.Namespace):
         scrap.download_all_verdicts()
 
     elif args.command == "human":
-        sample = args.sample if args.sample != 0 else 50
-        human.human_classification(sample, args.state)
+        human.human_classification(args.sample, args.state)
 
     elif args.command == "classify":
         if args.sample != 0:
-            classify.classify("sample", args.sample, args.state)
+            classify.classify("sample", args.train, args.sample, args.state, args.trainsize)
         else:
-            classify.classify("corpus")
+            classify.classify("corpus", args.train)
 
 
 if __name__ == "__main__":
