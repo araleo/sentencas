@@ -5,10 +5,13 @@ and the user is prompted to answer whick kind they are.
 Results are stored in a .csv file.
 """
 
+from typing import Tuple
 import os
 
 import pandas as pd
 
+from classify.Enums import CrimeTypeEnum
+from classify.Enums import ResultTypeEnum
 from constants import HUMAN_DIR
 from constants import TXT_DIR
 from csv_utils import get_dataframe
@@ -34,19 +37,20 @@ def classify_files(df: pd.DataFrame):
     files = list(df["full_id"])
     classified = []
     for fileid in files:
-        _type = classify_single_file(fileid)
-        classified.append(f"{fileid};{_type}")
-    save_list_as_csv(HUMAN_DIR, "human", classified)
+        crime_type, result_type = classify_single_file(fileid)
+        classified.append(";".join((fileid, crime_type, result_type)))
+    outpath = save_list_as_csv(HUMAN_DIR, "human", classified)
+    return outpath
 
 
-def classify_single_file(fileid: str) -> int:
+def classify_single_file(fileid: str) -> Tuple[str, str]:
     """
     Reads a file and prompts the user to classify it.
     """
     filepath = os.path.join(TXT_DIR, f"{fileid}.txt")
     print_file(filepath)
-    _type = prompt_user()
-    return _type
+    crime_type, result_type = prompt_user()
+    return crime_type, result_type
 
 
 def print_file(filepath: str):
@@ -55,17 +59,24 @@ def print_file(filepath: str):
     """
     with open(filepath) as f:
         content = f.read()
-        print(content)
+    print(content)
 
 
-def prompt_user() -> int:
+def prompt_user(crime_type: str = "", result_type: str = "") -> Tuple[str, str]:
     """
     Prompts user for the verdict type and returns the answer as int.
     """
-    print("\nQual é o tipo da sentença apresentada?")
-    print("1. Condenatória  2. Absolutória  3. Neutra")
-    ans = int(input())
-    return ans
+    while crime_type not in [str(m.value) for m in CrimeTypeEnum]:
+        print("\nQual é o tipo do crime mais gravoso tratado na sentença?")
+        print("   ".join(f"{m.value}. {m.name}" for m in CrimeTypeEnum))
+        crime_type = input()
+
+    while result_type not in [str(m.value) for m in ResultTypeEnum]:
+        print("\nQual é o tipo da sentença apresentada?")
+        print("   ".join(f"{m.value}. {m.name}" for m in ResultTypeEnum))
+        result_type = input()
+
+    return crime_type, result_type
 
 
 if __name__ == "__main__":

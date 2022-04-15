@@ -13,15 +13,9 @@ from constants import TXT_DIR
 
 class Repository:
 
-    def __init__(self, fileids: List[str] = None, repository: Set[Verdict] = None):
-        if fileids is not None:
-            self.repository = self.reader(fileids)
-        if repository is not None:
-            self.repository = repository
-
-    def __add__(self, other: Repository) -> Repository:
-        repo = self.repository.union(other.repository)
-        return Repository(repository=repo)
+    def __init__(self, fileids: List[str], enum_value: int):
+        self.repository = self.reader(fileids)
+        self.enum_value = enum_value
 
     def reader(self, fileids: List[str]) -> Set[Verdict]:
         repo = set()

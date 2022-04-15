@@ -16,12 +16,15 @@ from nltk.classify.scikitlearn import SklearnClassifier
 class VoteClassifier(ClassifierI):
     def __init__(self, classifiers: List[SklearnClassifier]):
         self._classifiers = classifiers
-        self._categories = [i + 1 for i in range(len(classifiers))]
 
     def votes(self, features):
         return [c.classify(features) for c in self._classifiers]
 
-    def safe_classify(self, features: Dict[str, bool], min_confidence: float) -> Union[Tuple[int, float], Tuple[None, None]]:
+    def safe_classify(
+        self,
+        features: Dict[str, bool],
+        min_confidence: float
+    ) -> Union[Tuple[int, float], Tuple[None, None]]:
         """
         Classifies the features with min_confidence.
         """

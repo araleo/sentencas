@@ -13,12 +13,14 @@ import random
 import nltk
 import pandas as pd
 
-from classify.classifiers import CLASSIFIERS
+from classify.classifiers import get_classifiers
 from classify import human
+from classify.Enums import CrimeTypeEnum
+from classify.Enums import ResultTypeEnum
 from classify.Repository import Repository
 from classify.Verdict import Verdict
 from classify.VoteClassifier import VoteClassifier
-from constants import HUMAN_DIR
+from constants import FULL_TRAIN_DATA_PATH
 from constants import OUT_CSV_NAMES
 from constants import OUT_DIR
 from constants import TRAIN_CSV_NAMES
@@ -30,11 +32,13 @@ from csv_utils import save_list_as_csv
 
 
 CONFIDENCE = 0.75
+DEFAULT_SAMPLE = 10
+FEATS_LEN = 3000
 
 
 def classify(
     command: str,
-    training_data: str = "",
+    training_file: str = "",
     sample_size: int = 0,
     random_state: int = 1,
     train_size: float = 0.75
@@ -43,45 +47,72 @@ def classify(
     Loads the training data, train the classifiers and classify
     either the whole available corpus or a sample.
     """
-    condenatorias, absolutorias, neutras = load_training_data(training_data)
-
-    all_words = nltk.FreqDist(condenatorias.tokens + absolutorias.tokens + neutras.tokens)
-    word_features = list(all_words)[:3000]
-    all_features = get_all_features(condenatorias, absolutorias, neutras, word_features)
-
-    train, test = get_train_test_sets(all_features, train_size)
-    vote_classifier = train_classifiers(train, test)
+    crime_data, result_data = load_training_data(training_file)
+    crime_words, crime_classifier = get_words_and_classifier(crime_data, train_size)
+    result_words, result_classifier = get_words_and_classifier(result_data, train_size)
 
     if command == "corpus":
-        output = classify_corpus(word_features, vote_classifier)
+        output = classify_corpus(
+            crime_words,
+            crime_classifier,
+            result_words,
+            result_classifier
+        )
+
     if command == "sample":
-        output = classify_sample(word_features, vote_classifier, sample_size, random_state)
+        output = classify_sample(
+            crime_words,
+            crime_classifier,
+            result_words,
+            result_classifier,
+            sample_size,
+            random_state
+        )
 
     output_path = save_list_as_csv(OUT_DIR, "output", output)
     verify_output_sample(output_path)
 
 
-def load_training_data(filename) -> Tuple[Repository, Repository, Repository]:
+def load_training_data(filename: str) -> Tuple[List[Repository], List[Repository]]:
     """
     Reads the training data .csv file and returns a tuple with 3
     verdicts repositories, one for each kind.
     """
-    filename = filename if filename != "" else "train.csv"
-    train_data_path = os.path.join(TRAIN_DIR, filename)
-    train = pd.read_csv(train_data_path, names=TRAIN_CSV_NAMES, sep=";")
-    condenatorias = load_training_type(train, 1)
-    absolutorias = load_training_type(train, 2)
-    neutras = load_training_type(train, 3)
-    return condenatorias, absolutorias, neutras
+    tp = FULL_TRAIN_DATA_PATH if filename == "" else os.path.join(TRAIN_DIR, filename)
+    print(f"Loading training data from {tp}")
+    train = pd.read_csv(tp, names=TRAIN_CSV_NAMES, sep=";")
+    crime = [load_training_type(train, "crime_type", m.value) for m in CrimeTypeEnum]
+    result = [load_training_type(train, "result_type", m.value) for m in ResultTypeEnum]
+    return crime, result
 
 
-def load_training_type(df: pd.DataFrame, typeid: int) -> Repository:
+def load_training_type(df: pd.DataFrame, type_field: str, type_value: int) -> Repository:
     """
     Loads a specific training data type into a Repository.
     """
-    fileids = list(df[df["type"] == typeid]["full_id"])
-    repo = Repository(fileids=fileids)
+    fileids = list(df[df[type_field] == type_value]["full_id"])
+    repo = Repository(fileids=fileids, enum_value=type_value)
     return repo
+
+
+def get_words_and_classifier(
+    training_data: List[Repository],
+    train_size:float
+) -> Tuple[List[str], VoteClassifier]:
+    """
+    Gets a list with the top FEATS_LEN words
+    of each type (crime or result) and a trained
+    vote classifier trained on the training_data.
+    """
+    tokens = []
+    for repo in training_data:
+        tokens.extend(repo.tokens)
+    fdist = nltk.FreqDist(tokens)
+    words = list(fdist)[:FEATS_LEN]
+    features = get_all_features(training_data, words)
+    train, test = get_train_test_sets(features, train_size)
+    vote_classifier = train_classifiers(train, test)
+    return words, vote_classifier
 
 
 def get_train_test_sets(
@@ -107,62 +138,44 @@ def train_classifiers(
     Trains each classifier individually and
     then ensembles the VoteClassifier.
     """
-    for classifier in CLASSIFIERS:
+    classifiers = get_classifiers()
+    for classifier in classifiers:
         classifier.train(train)
         print(classifier, nltk.classify.accuracy(classifier, test))
-    vote_classifier = VoteClassifier(CLASSIFIERS)
+    vote_classifier = VoteClassifier(classifiers)
     print("voted: ", nltk.classify.accuracy(vote_classifier, test))
     return vote_classifier
 
 
 def get_all_features(
-    condenatorias: Repository,
-    absolutorias: Repository,
-    neutras: Repository,
+    training_data: List[Repository],
     word_features: List[str]
 ) -> List[Tuple[Dict[str, bool], int]]:
     """
     Gets the features from each Repository and
     add them all into one list.
     """
-    con_features = get_corpus_features_list(condenatorias, 1, word_features)
-    abs_features = get_corpus_features_list(absolutorias, 2, word_features)
-    neu_features = get_corpus_features_list(neutras, 3, word_features)
-    return con_features + abs_features + neu_features
+    features = []
+    for repo in training_data:
+        features.extend(get_corpus_features_list(repo, word_features))
+    return features
 
 
 def get_corpus_features_list(
-    corpus: Repository,
-    _type: int,
+    repo: Repository,
     word_features: List[str]
 ) -> List[Tuple[Dict[str, bool], int]]:
     """
     Gets the features list from a Repository.
     """
-    return [(s.features(word_features), _type) for s in corpus.repository]
-
-
-def classify_corpus(
-    word_features: List[str],
-    vote_classifier: VoteClassifier
-) -> List[str]:
-    """
-    Classifies all of the available corpus.
-    """
-    output = []
-    corpus = os.listdir(TXT_DIR)
-    for i, sent in enumerate(corpus):
-        print(f"Classifying document #{i}", end="\r")
-        sent_id = sent.replace(".txt", "")
-        sent_path = os.path.join(TXT_DIR, sent)
-        _type, confidence = classify_document(sent_path, word_features, vote_classifier)
-        output.append(";".join((sent_id, _type, confidence)))
-    return output
+    return [(v.features(word_features), repo.enum_value) for v in repo.repository]
 
 
 def classify_sample(
-    word_features: List[str],
-    vote_classifier: VoteClassifier,
+    crime_words: List[str],
+    crime_classifier: VoteClassifier,
+    result_words: List[str],
+    result_classifier: VoteClassifier,
     size: int,
     state: int
 ) -> List[str]:
@@ -175,25 +188,71 @@ def classify_sample(
     for i, fileid in enumerate(list(df["full_id"])):
         print(f"Classifying document #{i}", end="\r")
         filepath = os.path.join(TXT_DIR, f"{fileid}.txt")
-        _type, confidence = classify_document(filepath, word_features, vote_classifier)
-        output.append(";".join((fileid, _type, confidence)))
+        crime, result = classify_document(
+            filepath,
+            crime_words,
+            crime_classifier,
+            result_words,
+            result_classifier
+        )
+        output.append(f"{fileid};{';'.join(crime)};{';'.join(result)}")
+    return output
+
+
+def classify_corpus(
+    crime_words: List[str],
+    crime_classifier: VoteClassifier,
+    result_words: List[str],
+    result_classifier: VoteClassifier
+) -> List[str]:
+    """
+    Classifies all of the available corpus.
+    """
+    output = []
+    corpus = os.listdir(TXT_DIR)
+    for i, _file in enumerate(corpus):
+        print(f"Classifying document #{i}", end="\r")
+        fileid = _file.replace(".txt", "")
+        sent_path = os.path.join(TXT_DIR, _file)
+        crime, result = classify_document(
+            sent_path,
+            crime_words,
+            crime_classifier,
+            result_words,
+            result_classifier
+        )
+        output.append(f"{fileid};{';'.join(crime)};{';'.join(result)}")
     return output
 
 
 def classify_document(
     filepath: str,
-    word_features: List[str],
-    vote_classifier: VoteClassifier
-) -> Tuple[str, str]:
+    crime_words: List[str],
+    crime_classifier: VoteClassifier,
+    result_words: List[str],
+    result_classifier: VoteClassifier,
+) -> Tuple[Tuple[str, str], Tuple[str, str]]:
     """
-    Reads the text content of a document
-    and classifies it.
+    Reads the text content of a document and classifies it.
     """
     with open(filepath) as f:
         content = f.read()
     v = Verdict(content)
-    v_features = v.features(word_features)
-    _type, _confidence = vote_classifier.safe_classify(v_features, CONFIDENCE)
+    crime = classify_type(v, crime_words, crime_classifier)
+    result = classify_type(v, result_words, result_classifier)
+    return crime, result
+
+
+def classify_type(
+    verdict: Verdict,
+    words: List[str],
+    classifier: VoteClassifier
+) -> Tuple[str, str]:
+    """
+    Classifies the verdict and returns the classification and confidence.
+    """
+    features = verdict.features(words)
+    _type, _confidence = classifier.safe_classify(features, CONFIDENCE)
     return str(_type), str(_confidence)
 
 
@@ -204,26 +263,15 @@ def verify_output_sample(filepath: str):
     the results among the training data to retro
     feed the model.
     """
-    can_verify = input("\nVerificar uma amostra de 10 sentenças? Y/n\n")
+    can_verify = input(f"\nVerificar uma amostra de {DEFAULT_SAMPLE} sentenças? Y/n\n")
     if can_verify == "n":
         return
 
-    verified = []
-    classifications = []
-
     df = pd.read_csv(filepath, names=OUT_CSV_NAMES, sep=";")
-    df: pd.DataFrame = df.sample(n=10)
-
-    for row in df.itertuples():
-        verified_type = human.classify_single_file(row.full_id)
-        verified.append(f"{row.full_id};{verified_type}")
-        classifications.append(((row.type, row.confidence), verified_type))
-
-    for i, classification in enumerate(classifications):
-        print(i, classification)
-
-    save_list_as_csv(HUMAN_DIR, "human", verified)
-    append_to_full_training_csv(verified)
+    df: pd.DataFrame = df.sample(n=DEFAULT_SAMPLE)
+    print(df.to_string())
+    outpath = human.classify_files(df)
+    append_to_full_training_csv(outpath)
 
 
 if __name__ == "__main__":

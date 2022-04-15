@@ -21,8 +21,10 @@ COURTS = {
 # Csv
 OUT_CSV_NAMES = [
     "full_id",
-    "type",
-    "confidence"
+    "crime_type",
+    "crime_confidence",
+    "result_type",
+    "result_confidence"
 ]
 
 RAW_CSV_NAMES = [
@@ -39,7 +41,8 @@ RAW_CSV_NAMES = [
 
 TRAIN_CSV_NAMES = [
     "full_id",
-    "type",
+    "crime_type",
+    "result_type"
 ]
 
 # Dirs
@@ -54,8 +57,9 @@ OUT_DIR = os.path.join(DATA_DIR, "out")
 
 # Files
 CSV_DATA_PATH = os.path.join(DATA_DIR, "data.csv")
-TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "train.csv")
 FULL_TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "full.csv")
+OUTPUT_PATH = os.path.join(DATA_DIR, "output.csv")
+TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "train.csv")
 
 
 if __name__ == "__main__":

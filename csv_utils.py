@@ -76,26 +76,29 @@ def get_dataframe() -> pd.DataFrame:
     removing any verdicts which text wasn't sucessfully downloaded.
     Returns the filtered dataframe.
     """
-    donwloaded_files = [f.replace(".txt", "") for f in os.listdir(TXT_DIR)]
+    downloaded_files = [f.replace(".txt", "") for f in os.listdir(TXT_DIR)]
     df = pd.read_csv(CSV_DATA_PATH, sep=";", names=RAW_CSV_NAMES)
-    df = df[df["full_id"].isin(donwloaded_files)]
+    df = df[df["full_id"].isin(downloaded_files)]
     return df
 
 
-def append_to_full_training_csv(data: List[str]):
+def append_to_full_training_csv(data_path: str):
     """
     Appends verified data to the full training .csv file,
     checking if entry isn't already there.
     """
     new_entries = []
 
+    with open(data_path) as f:
+        new_csv_content = f.readlines()
+
     with open(FULL_TRAIN_DATA_PATH) as f:
         ids = [line.strip().split(";")[0] for line in f.readlines()]
 
-    for line in data:
+    for line in new_csv_content:
         _id = line.strip().split(";")[0]
         if _id not in ids:
-            new_entries.append(line)
+            new_entries.append(line.strip())
 
     if new_entries:
         with open(FULL_TRAIN_DATA_PATH, "a") as f:

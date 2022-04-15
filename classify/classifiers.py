@@ -10,11 +10,12 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.svm import LinearSVC
 
 
-MNB = SklearnClassifier(MultinomialNB())
-BNB = SklearnClassifier(BernoulliNB())
-SGD = SklearnClassifier(SGDClassifier())
-LSVC = SklearnClassifier(LinearSVC(dual=False))
-CLASSIFIERS = [MNB, BNB, SGD, LSVC]
+def get_classifiers():
+    mnb = SklearnClassifier(MultinomialNB())
+    bnb = SklearnClassifier(BernoulliNB())
+    sgd = SklearnClassifier(SGDClassifier())
+    lsvc = SklearnClassifier(LinearSVC(dual=False))
+    return [mnb, bnb, sgd, lsvc]
 
 
 if __name__ == "__main__":
