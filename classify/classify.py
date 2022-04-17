@@ -48,8 +48,12 @@ def classify(
     either the whole available corpus or a sample.
     """
     crime_data, result_data = load_training_data(training_file)
-    crime_words, crime_classifier = get_words_and_classifier(crime_data, train_size)
-    result_words, result_classifier = get_words_and_classifier(result_data, train_size)
+
+    print("\nTraining crime type classifier.")
+    crime_words, crime_classifier = get_words_and_trained_classifier(crime_data, train_size)
+
+    print("\nTraining result type classifier.")
+    result_words, result_classifier = get_words_and_trained_classifier(result_data, train_size)
 
     if command == "corpus":
         output = classify_corpus(
@@ -95,7 +99,7 @@ def load_training_type(df: pd.DataFrame, type_field: str, type_value: int) -> Re
     return repo
 
 
-def get_words_and_classifier(
+def get_words_and_trained_classifier(
     training_data: List[Repository],
     train_size:float
 ) -> Tuple[List[str], VoteClassifier]:

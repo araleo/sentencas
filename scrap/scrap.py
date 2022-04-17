@@ -12,7 +12,6 @@ to filter a specific time frame and scrap your
 data within that time frame.
 """
 
-from distutils.log import Log
 from typing import List
 from typing import Tuple
 from typing import Union
