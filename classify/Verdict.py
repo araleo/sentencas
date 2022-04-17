@@ -10,7 +10,7 @@ import string
 import nltk
 
 
-STOP = nltk.corpus.stopwords.words("portuguese") + list(string.punctuation)
+STOP = nltk.corpus.stopwords.words("portuguese") + list(string.punctuation) + ['“', '”', '–', '...',]
 
 
 class Verdict:
