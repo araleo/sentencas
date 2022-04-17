@@ -1,4 +1,10 @@
 env/
 .env
 __pycache__
-data/
+data/html
+data/human
+data/logs
+data/out
+data/raw
+data/txt
+data/train/backup
