@@ -21,21 +21,19 @@ import bs4
 import os
 import requests
 
+from constants import BASE_URL
+from constants import COUNTY
 from constants import COURTS
 from constants import CSV_DATA_PATH
+from constants import EMPTY_RESULT
+from constants import MAX_RETRIES
 from constants import RAW_DIR
+from constants import RETRY_WAIT_SECS
+from constants import QUERY
 from constants import TXT_DIR
 from csv_utils import save_list_as_csv
 from my_logs import LogServices
 from my_logs import log_err
-
-
-RETRY_WAIT_SECS = 30
-MAX_RETRIES = 3
-BASE_URL = "https://www5.tjmg.jus.br/jurisprudencia/"
-COUNTY = 24 # 24 is Belo Horizonte
-EMPTY_RESULT = "Nenhum registro foi encontrado."
-QUERY = "crime"
 
 
 def search_all_courts():

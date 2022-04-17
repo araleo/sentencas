@@ -20,6 +20,9 @@ from classify.Enums import ResultTypeEnum
 from classify.Repository import Repository
 from classify.Verdict import Verdict
 from classify.VoteClassifier import VoteClassifier
+from constants import CONFIDENCE
+from constants import DEFAULT_SAMPLE
+from constants import FEATS_LEN
 from constants import FULL_TRAIN_DATA_PATH
 from constants import OUT_CSV_NAMES
 from constants import OUT_DIR
@@ -29,11 +32,6 @@ from constants import TXT_DIR
 from csv_utils import append_to_full_training_csv
 from csv_utils import get_dataframe
 from csv_utils import save_list_as_csv
-
-
-CONFIDENCE = 0.75
-DEFAULT_SAMPLE = 10
-FEATS_LEN = 3000
 
 
 def classify(

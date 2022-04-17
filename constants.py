@@ -61,6 +61,19 @@ FULL_TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "full.csv")
 OUTPUT_PATH = os.path.join(DATA_DIR, "output.csv")
 TRAIN_DATA_PATH = os.path.join(TRAIN_DIR, "train.csv")
 
+# Scrap
+RETRY_WAIT_SECS = 30
+MAX_RETRIES = 3
+BASE_URL = "https://www5.tjmg.jus.br/jurisprudencia/"
+COUNTY = 24 # 24 is Belo Horizonte
+EMPTY_RESULT = "Nenhum registro foi encontrado."
+QUERY = "crime"
+
+# Classify
+CONFIDENCE = 0.75
+DEFAULT_SAMPLE = 10
+FEATS_LEN = 3000
+
 
 if __name__ == "__main__":
     pass
