@@ -58,6 +58,6 @@ Exemplo de output dos modelos de classificação.
 
 ---
 
-## Constants
+## Constantes
 
 As constantes de configuração do programa estão no arquivo constants.py. Não há configuração do ambiente. Qualquer alteração nas constantes deve ser feita diretamente no arquivo constants.py
